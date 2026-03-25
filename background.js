@@ -12,34 +12,33 @@ function extractFilename(url) {
   } catch { return "welib-book"; }
 }
 
-// Use storage-backed dedup so service worker restarts don't cause re-downloads
-let downloadedUrls = new Set();
-
-// Load persisted set on startup
-chrome.storage.local.get({ downloadedUrls: [] }, ({ downloadedUrls: stored }) => {
-  downloadedUrls = new Set(stored);
-});
-
-function persistDownloadedUrls() {
-  // Keep only the last 500 entries to avoid unbounded storage growth
-  const arr = [...downloadedUrls];
-  const trimmed = arr.length > 500 ? arr.slice(arr.length - 500) : arr;
-  chrome.storage.local.set({ downloadedUrls: trimmed });
-}
+// Dedup by filename (not full URL) so token/query changes don't cause re-downloads
+const pending = new Set();
 
 function doDownload(url) {
-  if (downloadedUrls.has(url) || !hasBookExtension(url)) return;
+  if (!hasBookExtension(url)) return;
 
-  chrome.storage.local.get({ enabled: true }, ({ enabled }) => {
-    if (!enabled) return;
+  const filename = extractFilename(url);
+  if (pending.has(filename)) return;
+  pending.add(filename);
 
-    downloadedUrls.add(url);
-    persistDownloadedUrls();
-    chrome.downloads.download({ url, filename: extractFilename(url), saveAs: false }, (downloadId) => {
-      if (chrome.runtime.lastError) {
-        downloadedUrls.delete(url);
-        persistDownloadedUrls();
-      }
+  chrome.storage.local.get({ enabled: true, downloadedFiles: [] }, ({ enabled, downloadedFiles }) => {
+    if (!enabled || downloadedFiles.includes(filename)) {
+      pending.delete(filename);
+      return;
+    }
+
+    const updated = downloadedFiles.concat(filename);
+    const trimmed = updated.length > 500 ? updated.slice(updated.length - 500) : updated;
+    chrome.storage.local.set({ downloadedFiles: trimmed }, () => {
+      chrome.downloads.download({ url, filename, saveAs: false }, (downloadId) => {
+        pending.delete(filename);
+        if (chrome.runtime.lastError) {
+          chrome.storage.local.get({ downloadedFiles: [] }, ({ downloadedFiles: current }) => {
+            chrome.storage.local.set({ downloadedFiles: current.filter(f => f !== filename) });
+          });
+        }
+      });
     });
   });
 }
