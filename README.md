@@ -8,7 +8,7 @@
 
 Monitors WeLib pages and intercepts requests from read mode, downloading the files and bypassing the 5 books per hour limit.
 
-**Supported formats:** PDF, EPUB, MOBI, DJVU, AZW3, FB2
+**Supported formats:** PDF, EPUB, MOBI, DJVU, AZW3, FB2, MP3
 
 **Supported mirrors:**
 - welib.org
