@@ -1,15 +1,30 @@
-const FILE_EXTENSIONS = [".pdf", ".epub", ".mobi", ".djvu", ".azw3", ".fb2"];
+const FILE_EXTENSIONS = [".pdf", ".epub", ".mobi", ".djvu", ".azw3", ".fb2", ".mp3"];
 
 function hasBookExtension(url) {
-  const lower = url.toLowerCase().split("?")[0];
+  const lower = url.toLowerCase().split("?")[0].split("#")[0];
   return FILE_EXTENSIONS.some(ext => lower.endsWith(ext));
+}
+
+function sanitizeFilename(name) {
+  return name.replace(/[<>:"/\\|?*\x00-\x1f]/g, "_");
 }
 
 function extractFilename(url) {
   try {
     const decoded = decodeURIComponent(url);
-    return decoded.split("/").pop().split("?")[0] || "welib-book";
-  } catch { return "welib-book"; }
+    const name = decoded.split("/").pop().split("?")[0].split("#")[0];
+    if (name && hasBookExtension(name)) return sanitizeFilename(name);
+    // Fallback: use hash from URL + guess extension
+    const ext = FILE_EXTENSIONS.find(e => decoded.toLowerCase().includes(e)) || ".bin";
+    return "welib-download" + ext;
+  } catch { return "welib-download.bin"; }
+}
+
+// Serial queue to avoid race conditions on chrome.storage.local
+let storageQueue = Promise.resolve();
+function withStorage(fn) {
+  storageQueue = storageQueue.then(fn, fn);
+  return storageQueue;
 }
 
 // Dedup by filename (not full URL) so token/query changes don't cause re-downloads
@@ -22,25 +37,30 @@ function doDownload(url) {
   if (pending.has(filename)) return;
   pending.add(filename);
 
-  chrome.storage.local.get({ enabled: true, downloadedFiles: [] }, ({ enabled, downloadedFiles }) => {
-    if (!enabled || downloadedFiles.includes(filename)) {
-      pending.delete(filename);
-      return;
-    }
-
-    const updated = downloadedFiles.concat(filename);
-    const trimmed = updated.length > 500 ? updated.slice(updated.length - 500) : updated;
-    chrome.storage.local.set({ downloadedFiles: trimmed }, () => {
-      chrome.downloads.download({ url, filename, saveAs: false }, (downloadId) => {
+  withStorage(() => new Promise((resolve) => {
+    chrome.storage.local.get({ enabled: true, downloadedFiles: [] }, ({ enabled, downloadedFiles }) => {
+      if (!enabled || downloadedFiles.includes(filename)) {
         pending.delete(filename);
-        if (chrome.runtime.lastError) {
-          chrome.storage.local.get({ downloadedFiles: [] }, ({ downloadedFiles: current }) => {
-            chrome.storage.local.set({ downloadedFiles: current.filter(f => f !== filename) });
-          });
-        }
+        return resolve();
+      }
+
+      const updated = downloadedFiles.concat(filename);
+      const trimmed = updated.length > 500 ? updated.slice(updated.length - 500) : updated;
+      chrome.storage.local.set({ downloadedFiles: trimmed }, () => {
+        chrome.downloads.download({ url, filename, saveAs: false }, () => {
+          pending.delete(filename);
+          if (chrome.runtime.lastError) {
+            // Rollback: remove filename from history (runs inside the same queue via resolve chaining)
+            chrome.storage.local.set({
+              downloadedFiles: downloadedFiles.filter(f => f !== filename)
+            }, resolve);
+          } else {
+            resolve();
+          }
+        });
       });
     });
-  });
+  }));
 }
 
 chrome.runtime.onMessage.addListener((msg) => {
@@ -54,7 +74,9 @@ chrome.webRequest.onBeforeRequest.addListener(
       "*://*.welib-premium.org/*",
       "*://*.welib-public.org/*",
       "*://welib-premium.org/*",
-      "*://welib-public.org/*"
+      "*://welib-public.org/*",
+      "*://welib.org/audiobooks/*",
+      "*://*.welib.org/audiobooks/*"
     ]
   }
 );
