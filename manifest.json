@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WeLib Bypass",
-  "version": "1.0",
+  "version": "1.1",
   "description": "Bypass welib.org limit",
   "permissions": ["webRequest", "downloads", "storage"],
   "host_permissions": [
@@ -10,9 +10,11 @@
     "*://welib-premium.org/*",
     "*://welib-public.org/*",
     "*://welib.org/*",
-    "*://*.welib.org/*"
+    "*://*.welib.org/*",
+    "*://x-cdn-x.com/*",
+    "*://*.x-cdn-x.com/*"
   ],
-  "background": { "service_worker": "background.js" },
+  "background": { "service_worker": "background.js"},
   "content_scripts": [{
     "matches": [
       "*://*.welib-premium.org/*",
@@ -20,7 +22,9 @@
       "*://welib-premium.org/*",
       "*://welib-public.org/*",
       "*://welib.org/*",
-      "*://*.welib.org/*"
+      "*://*.welib.org/*",
+      "*://x-cdn-x.com/*",
+      "*://*.x-cdn-x.com/*"
     ],
     "js": ["content.js"],
     "run_at": "document_start",

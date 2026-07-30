@@ -76,7 +76,9 @@ chrome.webRequest.onBeforeRequest.addListener(
       "*://welib-premium.org/*",
       "*://welib-public.org/*",
       "*://welib.org/audiobooks/*",
-      "*://*.welib.org/audiobooks/*"
+      "*://*.welib.org/audiobooks/*",
+      "*://x-cdn-x.com/*",
+      "*://*.x-cdn-x.com/*",
     ]
   }
 );
