@@ -1,4 +1,4 @@
-const FILE_EXTENSIONS = [".pdf", ".epub", ".mobi", ".djvu", ".azw3", ".fb2", ".mp3"];
+const FILE_EXTENSIONS = [".pdf", ".epub", ".mobi", ".djvu", ".azw3", ".fb2", ".mp3", ".txt"];
 
 function hasBookExtension(url) {
   const lower = url.toLowerCase().split("?")[0].split("#")[0];
@@ -79,6 +79,10 @@ chrome.webRequest.onBeforeRequest.addListener(
       "*://*.welib.org/audiobooks/*",
       "*://x-cdn-x.com/*",
       "*://*.x-cdn-x.com/*",
+      "*://y-cdn-y.com/*",
+      "*://*.y-cdn-y.com/*",
+      "*://welib.gl/*",
+      "*://*.welib.gl/*",
     ]
   }
 );
