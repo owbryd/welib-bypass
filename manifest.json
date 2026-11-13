@@ -11,6 +11,8 @@
     "*://welib-public.org/*",
     "*://welib.org/*",
     "*://*.welib.org/*",
+    "*://welib.gl/*",
+    "*://*.welib.gl/*",
     "*://x-cdn-x.com/*",
     "*://*.x-cdn-x.com/*"
   ],
@@ -23,6 +25,8 @@
       "*://welib-public.org/*",
       "*://welib.org/*",
       "*://*.welib.org/*",
+      "*://welib.gl/*",
+      "*://*.welib.gl/*",
       "*://x-cdn-x.com/*",
       "*://*.x-cdn-x.com/*"
     ],
