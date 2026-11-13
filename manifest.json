@@ -14,7 +14,9 @@
     "*://welib.gl/*",
     "*://*.welib.gl/*",
     "*://x-cdn-x.com/*",
-    "*://*.x-cdn-x.com/*"
+    "*://*.x-cdn-x.com/*",
+    "*://y-cdn-y.com/*",
+    "*://*.y-cdn-y.com/*"
   ],
   "background": { "service_worker": "background.js"},
   "content_scripts": [{
@@ -28,7 +30,9 @@
       "*://welib.gl/*",
       "*://*.welib.gl/*",
       "*://x-cdn-x.com/*",
-      "*://*.x-cdn-x.com/*"
+      "*://*.x-cdn-x.com/*",
+      "*://y-cdn-y.com/*",
+      "*://*.y-cdn-y.com/*"
     ],
     "js": ["content.js"],
     "run_at": "document_start",
